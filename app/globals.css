@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-system: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 antialiased;
+}
+
+/* Thin scrollbars for the chat column on desktop. */
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-gray-300;
+}
+
+/* Very small typographic helpers for streamed markdown-ish text. */
+.prose-chat p {
+  @apply mb-3 leading-relaxed;
+}
+.prose-chat p:last-child {
+  @apply mb-0;
+}
+.prose-chat ul,
+.prose-chat ol {
+  @apply mb-3 ml-5 list-disc space-y-1;
+}
+.prose-chat ol {
+  @apply list-decimal;
+}
+.prose-chat code {
+  @apply rounded bg-gray-100 px-1 py-0.5 font-mono text-[0.85em];
+}
+.prose-chat pre {
+  @apply mb-3 overflow-x-auto rounded-lg bg-gray-900 p-3 text-sm text-gray-100;
+}
+.prose-chat pre code {
+  @apply bg-transparent p-0 text-gray-100;
+}

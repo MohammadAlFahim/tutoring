@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#4f46e5"/>
+  <!-- graduation cap: mortarboard -->
+  <polygon points="256,150 444,218 256,286 68,218" fill="#ffffff"/>
+  <!-- cap band / head -->
+  <path d="M170 240 L170 306 Q170 340 256 340 Q342 340 342 306 L342 240 L256 273 Z"
+        fill="#ffffff" opacity="0.9"/>
+  <!-- tassel -->
+  <path d="M444 218 L444 332" stroke="#ffffff" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <circle cx="444" cy="344" r="15" fill="#ffffff"/>
+</svg>

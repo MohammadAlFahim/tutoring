@@ -188,6 +188,9 @@ The chat route streams responses; it's configured with `maxDuration = 60`
   most-engaged students, recent questions, and quiz accuracy by topic.
 - **Tutor system prompt** — used verbatim; Socratic, grounded, and refuses to
   complete graded work.
+- **Installable PWA** — a web manifest, home-screen icons, and a safe service
+  worker (offline fallback; never caches auth/API) let students "Add to Home
+  Screen" on mobile. The service worker registers in production only.
 
 ---
 

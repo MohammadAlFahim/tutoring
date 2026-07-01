@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    # Placeholder (non-secret) values so typecheck / tests / build run without
+    # real credentials. The app reads secrets lazily, so no external calls happen.
+    # NOTE: intentionally NOT setting NEXT_PUBLIC_UNIT / ADMIN_EMAIL /
+    # NEXT_PUBLIC_ALLOWED_STUDENT_DOMAIN so the config unit tests exercise the
+    # documented defaults.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
+      SUPABASE_SERVICE_ROLE_KEY: "placeholder-service-role-key"
+      ANTHROPIC_API_KEY: "placeholder"
+      VOYAGE_API_KEY: "placeholder"
+      OPENAI_API_KEY: "placeholder"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build

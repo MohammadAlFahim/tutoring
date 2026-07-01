@@ -51,7 +51,8 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
-  const question = last.content.trim();
+  // Bound question length to protect against abuse / runaway cost.
+  const question = last.content.trim().slice(0, 4000);
 
   const admin = createSupabaseAdminClient();
 
@@ -110,10 +111,14 @@ export async function POST(request: NextRequest) {
   const { chunks, citations } = retrieval;
 
   // --- Build the grounded prompt -----------------------------------------
-  const history = messages.slice(0, -1).map((m) => ({
-    role: m.role,
-    content: m.content,
-  }));
+  // Keep only the most recent turns (bounds cost/latency and request size), then
+  // ensure the sequence still starts with a user message for the Anthropic API.
+  let history = messages
+    .slice(0, -1)
+    .slice(-24)
+    .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }));
+  while (history.length && history[0].role !== "user") history = history.slice(1);
+
   const apiMessages = [
     ...history,
     { role: "user" as const, content: buildGroundedUserContent(question, chunks) },

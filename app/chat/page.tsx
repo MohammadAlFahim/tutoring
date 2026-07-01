@@ -30,6 +30,7 @@ export default async function ChatPage() {
   return (
     <ChatClient
       initialMessages={history}
+      userId={user.id}
       userEmail={user.email ?? ""}
       isAdmin={isAdmin}
     />

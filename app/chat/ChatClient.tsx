@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UNIT } from "@/lib/config";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { Markdown } from "@/components/Markdown";
 import type { ChatMessage, Citation } from "@/lib/types";
 
 const EXAMPLE_PROMPTS = [
@@ -15,10 +16,12 @@ const EXAMPLE_PROMPTS = [
 
 export default function ChatClient({
   initialMessages,
+  userId,
   userEmail,
   isAdmin,
 }: {
   initialMessages: ChatMessage[];
+  userId: string;
   userEmail: string;
   isAdmin: boolean;
 }) {
@@ -27,10 +30,12 @@ export default function ChatClient({
   const [input, setInput] = useState("");
   const [deepExplain, setDeepExplain] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sessionIdRef = useRef<string>("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Session id + session_start event (once).
   useEffect(() => {
@@ -79,6 +84,7 @@ export default function ChatClient({
         { role: "assistant", content: "", citations: [] },
       ]);
       setInput("");
+      if (inputRef.current) inputRef.current.style.height = "auto";
       setIsStreaming(true);
 
       try {
@@ -178,6 +184,27 @@ export default function ChatClient({
     window.location.href = "/login";
   }
 
+  async function clearHistory() {
+    if (isStreaming || clearing || messages.length === 0) return;
+    if (!confirm("Clear this conversation? Your history will be deleted.")) return;
+    setClearing(true);
+    setError(null);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      // RLS restricts deletes to the user's own rows; the filter matches them all.
+      const { error: delErr } = await supabase
+        .from("chat_messages")
+        .delete()
+        .eq("user_id", userId);
+      if (delErr) throw delErr;
+      setMessages([]);
+    } catch {
+      setError("Couldn't clear your history. Please try again.");
+    } finally {
+      setClearing(false);
+    }
+  }
+
   return (
     <div className="flex h-dvh flex-col bg-gray-50">
       {/* Header */}
@@ -187,6 +214,15 @@ export default function ChatClient({
           <p className="truncate text-xs text-gray-400">Study tutor</p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          {messages.length > 0 && (
+            <button
+              onClick={clearHistory}
+              disabled={clearing || isStreaming}
+              className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+            >
+              {clearing ? "Clearing…" : "New chat"}
+            </button>
+          )}
           <button
             onClick={quizMe}
             className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-brand hover:bg-brand-light"
@@ -275,8 +311,13 @@ export default function ChatClient({
           </div>
           <form onSubmit={handleSubmit} className="flex items-end gap-2">
             <textarea
+              ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
+              }}
               onKeyDown={handleKeyDown}
               rows={1}
               placeholder={`Ask anything about ${UNIT}…`}
@@ -355,7 +396,13 @@ function MessageBubble({
           }`}
         >
           {message.content ? (
-            <div className="whitespace-pre-wrap break-words">{message.content}</div>
+            isUser ? (
+              <div className="whitespace-pre-wrap break-words">
+                {message.content}
+              </div>
+            ) : (
+              <Markdown>{message.content}</Markdown>
+            )
           ) : streaming ? (
             <TypingDots />
           ) : (

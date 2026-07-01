@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 export const runtime = "nodejs";
 
@@ -13,7 +14,8 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
-  const next = searchParams.get("next") ?? "/chat";
+  // Sanitize `next` to a same-origin relative path to prevent open redirects.
+  const next = safeNextPath(searchParams.get("next"));
 
   const supabase = await createSupabaseServerClient();
 

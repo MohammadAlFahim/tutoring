@@ -71,6 +71,32 @@ test("top topics extracts keywords and drops stopwords", () => {
   assert.ok(!terms.includes("the"));
 });
 
+test("funnel stays monotonic: returned never exceeds askedQuestion", () => {
+  // 3 users who only open the app on two days (session_start) but never ask;
+  // 1 user who asks on a single day. Old bug: returned(3) > askedQuestion(1).
+  const evs: RawEvent[] = [
+    { user_id: "l1", type: "session_start", payload: {}, created_at: day(0) },
+    { user_id: "l1", type: "session_start", payload: {}, created_at: day(1) },
+    { user_id: "l2", type: "session_start", payload: {}, created_at: day(0) },
+    { user_id: "l2", type: "session_start", payload: {}, created_at: day(2) },
+    { user_id: "l3", type: "session_start", payload: {}, created_at: day(0) },
+    { user_id: "l3", type: "session_start", payload: {}, created_at: day(3) },
+    { user_id: "a1", type: "question_asked", payload: { question: "trees?" }, created_at: day(0) },
+  ];
+  const us: RawUser[] = ["l1", "l2", "l3", "a1"].map((id) => ({
+    id,
+    email: `${id}@student.curtin.edu.au`,
+    created_at: day(9),
+  }));
+  const a = computeAnalytics(evs, [], us, now);
+  assert.equal(a.funnel.askedQuestion, 1);
+  assert.equal(a.funnel.returned, 0); // a1 asked but did not return; the lurkers don't count
+  assert.ok(a.funnel.returned <= a.funnel.askedQuestion);
+  assert.ok(a.funnel.askedQuestion <= a.funnel.signups);
+  // retention (activity-based) legitimately still counts the returning lurkers.
+  assert.equal(a.retention.returningUsers, 3);
+});
+
 test("empty inputs do not throw and yield zeros", () => {
   const a = computeAnalytics([], [], [], now);
   assert.equal(a.totals.signups, 0);

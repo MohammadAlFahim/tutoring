@@ -39,8 +39,10 @@ export async function checkChatRateLimit(
     };
   }
 
+  // The caller logs the current request's `question_asked` event BEFORE calling
+  // this, so `used` already includes it — allow up to and including the max.
   const used = count ?? 0;
-  const allowed = used < RATE_LIMIT_MAX;
+  const allowed = used <= RATE_LIMIT_MAX;
   return {
     allowed,
     remaining: Math.max(0, RATE_LIMIT_MAX - used),

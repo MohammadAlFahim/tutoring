@@ -29,6 +29,7 @@ import {
 } from "../lib/config";
 import { getEmbeddingProvider } from "../lib/ai/embeddings";
 import { chunkText, estimateTokens, formatTimestamp } from "../lib/chunking";
+import { extractLectureNo } from "../lib/ingest-util";
 import { createSupabaseAdminClient } from "../lib/supabase/admin";
 import type { ChunkMetadata, SourceType } from "../lib/types";
 
@@ -64,12 +65,6 @@ function titleFromFilename(file: string): string {
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function extractLectureNo(name: string): number | undefined {
-  const m = name.match(/(?:lecture|lec|week|wk|l)\s*[-_ ]?(\d{1,2})/i);
-  if (m) return Number(m[1]);
-  return undefined;
 }
 
 async function walk(dir: string): Promise<string[]> {
@@ -290,16 +285,13 @@ async function main() {
         docsSkipped++;
         continue;
       }
-      if (existing) {
-        // Changed file: delete old doc (chunks cascade) and re-ingest.
-        await supabase.from("documents").delete().eq("id", existing.id);
-      }
-
+      // Parse/transcribe FIRST — the previously-good document stays intact if
+      // this fails (a transient transcription error must never wipe existing data).
       let chunks: PreparedChunk[];
       try {
         chunks = await prepareChunks(absFile, sourceType, openai);
       } catch (err) {
-        console.error(`  ✗ Failed to parse ${rel}:`, err);
+        console.error(`  ✗ Failed to parse ${rel} (existing data kept):`, err);
         continue;
       }
       if (chunks.length === 0) {
@@ -307,7 +299,24 @@ async function main() {
         continue;
       }
 
-      // Insert the document row.
+      // Embed BEFORE touching the DB, so an embedding failure also leaves the
+      // old document intact and never strands a hash-matching empty document.
+      console.log(`  + ${rel} → ${chunks.length} chunks, embedding…`);
+      let vectors: string[];
+      try {
+        vectors = await embedAll(chunks.map((c) => c.content));
+      } catch (err) {
+        console.error(`  ✗ Embedding failed for ${rel} (existing data kept):`, err);
+        continue;
+      }
+
+      // New content is fully ready. Now replace: delete the old row (chunks
+      // cascade) and insert the new document + its chunks. If any insert fails,
+      // remove the new (partial) document so the next run reprocesses the file.
+      if (existing) {
+        await supabase.from("documents").delete().eq("id", existing.id);
+      }
+
       const { data: doc, error: docErr } = await supabase
         .from("documents")
         .insert({
@@ -324,9 +333,6 @@ async function main() {
         continue;
       }
 
-      // Embed + insert chunks.
-      console.log(`  + ${rel} → ${chunks.length} chunks, embedding…`);
-      const vectors = await embedAll(chunks.map((c) => c.content));
       const rows = chunks.map((c, i) => ({
         document_id: doc.id,
         content: c.content,
@@ -337,14 +343,21 @@ async function main() {
 
       // Insert in batches to keep request sizes sane.
       const INSERT_BATCH = 200;
+      let chunkInsertFailed = false;
       for (let i = 0; i < rows.length; i += INSERT_BATCH) {
         const { error: chunkErr } = await supabase
           .from("chunks")
           .insert(rows.slice(i, i + INSERT_BATCH));
         if (chunkErr) {
           console.error(`  ✗ Chunk insert failed for ${rel}:`, chunkErr.message);
+          chunkInsertFailed = true;
           break;
         }
+      }
+      if (chunkInsertFailed) {
+        // Roll back the incomplete document so idempotency reprocesses it next run.
+        await supabase.from("documents").delete().eq("id", doc.id);
+        continue;
       }
 
       docsProcessed++;

@@ -151,6 +151,13 @@ export function computeAnalytics(
     }));
 
   const askedUsers = new Set(questionEvents.map((e) => e.user_id).filter(Boolean));
+  // Users who asked a question AND came back on a later day. Using this (rather
+  // than all returning users) keeps the funnel monotonic: a user who only
+  // opened the app on two days but never asked shouldn't out-count the "asked"
+  // stage.
+  const returnedAskers = [...askedUsers].filter(
+    (id) => (daysByUser.get(id as string)?.size ?? 0) >= 2,
+  ).length;
 
   // --- Quiz performance ---
   const totalAnswered = attempts.length;
@@ -193,7 +200,7 @@ export function computeAnalytics(
     funnel: {
       signups: users.length,
       askedQuestion: askedUsers.size,
-      returned: returningUsers,
+      returned: returnedAskers,
     },
     questionsPerUser: {
       avg: activeUsers ? questionEvents.length / activeUsers : 0,

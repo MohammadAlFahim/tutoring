@@ -140,6 +140,15 @@ export default function ChatClient({
               updateAssistant((m) => ({ ...m, content: m.content + (evt.text ?? "") }));
             } else if (evt.type === "error") {
               setError(evt.error ?? "Something went wrong.");
+              // Drop the empty assistant placeholder so it isn't resent to the
+              // model on the next turn (an empty text block would be rejected).
+              setMessages((prev) => {
+                const copy = [...prev];
+                const i = copy.length - 1;
+                if (i >= 0 && copy[i].role === "assistant" && !copy[i].content)
+                  copy.pop();
+                return copy;
+              });
             }
           }
         }

@@ -56,18 +56,10 @@ export async function POST(request: NextRequest) {
 
   const admin = createSupabaseAdminClient();
 
-  // --- Rate limit ---------------------------------------------------------
-  const rl = await checkChatRateLimit(admin, user.id);
-  if (!rl.allowed) {
-    return NextResponse.json(
-      {
-        error: `You're sending questions a bit fast. Please wait ~${rl.retryAfterSeconds}s and try again.`,
-      },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
-    );
-  }
-
-  // Log the question (this also counts toward the rate limit window).
+  // Log the question FIRST, then rate-limit on a count that includes this row.
+  // Logging before counting means concurrent requests from the same user each
+  // see each other's rows, which bounds the classic check-then-act race to at
+  // most a small overshoot instead of letting a burst all pass at once.
   await logEvent(admin, {
     userId: user.id,
     sessionId,
@@ -79,6 +71,18 @@ export async function POST(request: NextRequest) {
       question: question.slice(0, 500),
     },
   });
+
+  // --- Rate limit (count is inclusive of the event just logged) -----------
+  const rl = await checkChatRateLimit(admin, user.id);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      {
+        error: `You're sending questions a bit fast. Please wait ~${rl.retryAfterSeconds}s and try again.`,
+      },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+    );
+  }
+
   if (deepExplain) {
     await logEvent(admin, {
       userId: user.id,
@@ -116,7 +120,11 @@ export async function POST(request: NextRequest) {
   let history = messages
     .slice(0, -1)
     .slice(-24)
-    .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }));
+    .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }))
+    // Never forward an empty/whitespace-only message — the model rejects empty
+    // text blocks, and a stale blank assistant placeholder could otherwise wedge
+    // the whole conversation.
+    .filter((m) => m.content.trim().length > 0);
   while (history.length && history[0].role !== "user") history = history.slice(1);
 
   const apiMessages = [

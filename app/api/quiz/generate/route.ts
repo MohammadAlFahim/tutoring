@@ -137,8 +137,24 @@ Generate ${n} practice questions on this topic as specified.`;
   }
 
   // Build public questions (no leaked answers) + signed tokens.
+  // Drop malformed questions from raw model output: every question needs text +
+  // explanation, and every multiple-choice question needs a usable options array
+  // with an in-range correct_index (otherwise it would be ungradable / unwinnable
+  // or dead-end the quiz UI).
   const publicQuestions: QuizQuestionPublic[] = questions
-    .filter((q) => q.question && q.explanation)
+    .filter((q) => {
+      if (!q.question || !q.explanation) return false;
+      if (q.type === "multiple_choice") {
+        return (
+          Array.isArray(q.options) &&
+          q.options.length >= 2 &&
+          Number.isInteger(q.correct_index) &&
+          (q.correct_index as number) >= 0 &&
+          (q.correct_index as number) < q.options.length
+        );
+      }
+      return true;
+    })
     .map((q) => {
       const secret: QuizQuestionSecret = {
         type: q.type === "multiple_choice" ? "multiple_choice" : "short_answer",

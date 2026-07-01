@@ -9,6 +9,7 @@ interface GradeResult {
   is_correct: boolean;
   feedback: string;
   correct_answer: string | null;
+  correct_index: number | null;
   explanation: string;
 }
 
@@ -220,10 +221,14 @@ export default function QuizClient({ initialTopic }: { initialTopic: string }) {
                 <div className="mt-4 space-y-2">
                   {current.options.map((opt, i) => {
                     const isSelected = selected === i;
+                    // Highlight by index (robust to duplicate option text); fall
+                    // back to text match only if the index is missing.
                     const isAnswerKey =
-                      result &&
-                      current.options &&
-                      result.correct_answer === current.options[i];
+                      !!result &&
+                      (result.correct_index != null
+                        ? result.correct_index === i
+                        : current.options != null &&
+                          result.correct_answer === current.options[i]);
                     const showWrong = result && isSelected && !result.is_correct;
                     return (
                       <button

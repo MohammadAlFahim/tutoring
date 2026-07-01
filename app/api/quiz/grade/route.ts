@@ -91,15 +91,30 @@ export async function POST(request: NextRequest) {
   let isCorrect = false;
   let feedback = "";
   let correctAnswer: string | null = null;
+  let correctIndex: number | null = null;
   const studentAnswerText = String(body.answer ?? "").trim();
 
   if (secret.type === "multiple_choice") {
+    // Defensive: a well-formed MC question must have a usable options array and
+    // an in-range correct_index. Reject anything else instead of silently
+    // grading every answer wrong.
+    const ci = secret.correct_index;
+    const validMc =
+      Array.isArray(secret.options) &&
+      secret.options.length >= 2 &&
+      Number.isInteger(ci) &&
+      (ci as number) >= 0 &&
+      (ci as number) < secret.options.length;
+    if (!validMc) {
+      return NextResponse.json(
+        { error: "This question was malformed and can't be graded." },
+        { status: 422 },
+      );
+    }
+    correctIndex = ci as number;
     const selected = Number(body.answer);
-    isCorrect = Number.isInteger(selected) && selected === secret.correct_index;
-    correctAnswer =
-      secret.options && secret.correct_index != null
-        ? secret.options[secret.correct_index]
-        : null;
+    isCorrect = Number.isInteger(selected) && selected === correctIndex;
+    correctAnswer = secret.options![correctIndex];
     feedback = isCorrect
       ? "Correct! " + secret.explanation
       : `Not quite. ${secret.explanation}`;
@@ -146,6 +161,7 @@ export async function POST(request: NextRequest) {
     is_correct: isCorrect,
     feedback,
     correct_answer: correctAnswer,
+    correct_index: correctIndex,
     explanation: secret.explanation,
   });
 }

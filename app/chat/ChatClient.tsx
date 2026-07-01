@@ -220,7 +220,7 @@ export default function ChatClient({
       <header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
         <div className="min-w-0">
           <h1 className="truncate text-sm font-semibold text-gray-900">{UNIT}</h1>
-          <p className="truncate text-xs text-gray-400">Study tutor</p>
+          <p className="truncate text-xs text-gray-500">Study tutor</p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {messages.length > 0 && (
@@ -257,7 +257,11 @@ export default function ChatClient({
       </header>
 
       {/* Messages */}
-      <div ref={scrollRef} className="scroll-thin flex-1 overflow-y-auto">
+      <main
+        ref={scrollRef}
+        aria-label="Conversation"
+        className="scroll-thin flex-1 overflow-y-auto"
+      >
         <div className="mx-auto w-full max-w-2xl px-4 py-4">
           {messages.length === 0 ? (
             <EmptyState onPick={(p) => void send(p)} />
@@ -288,19 +292,24 @@ export default function ChatClient({
           )}
           <div ref={bottomRef} />
         </div>
-      </div>
+      </main>
 
       {/* Composer */}
-      <div className="border-t border-gray-200 bg-white px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+      <footer className="border-t border-gray-200 bg-white px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
         <div className="mx-auto w-full max-w-2xl">
           <div className="mb-2 flex items-center justify-between">
-            <label className="flex cursor-pointer select-none items-center gap-2 text-xs text-gray-600">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={deepExplain}
+              aria-label="Deep explain (route to the more powerful model for hard concepts)"
+              onClick={() => setDeepExplain((v) => !v)}
+              className="flex select-none items-center gap-2 text-xs text-gray-600"
+            >
               <span
-                role="switch"
-                aria-checked={deepExplain}
-                onClick={() => setDeepExplain((v) => !v)}
+                aria-hidden="true"
                 className={`relative inline-flex h-5 w-9 items-center rounded-full transition ${
-                  deepExplain ? "bg-brand" : "bg-gray-300"
+                  deepExplain ? "bg-brand" : "bg-gray-400"
                 }`}
               >
                 <span
@@ -310,7 +319,7 @@ export default function ChatClient({
                 />
               </span>
               Deep explain
-            </label>
+            </button>
             <button
               onClick={quizMe}
               className="text-xs font-medium text-brand hover:underline"
@@ -347,11 +356,11 @@ export default function ChatClient({
               )}
             </button>
           </form>
-          <p className="mt-1.5 text-center text-[11px] text-gray-400">
+          <p className="mt-1.5 text-center text-[11px] text-gray-500">
             Socratic tutor · cites the unit&apos;s materials · won&apos;t complete graded work
           </p>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
@@ -415,7 +424,7 @@ function MessageBubble({
           ) : streaming ? (
             <TypingDots />
           ) : (
-            <span className="text-gray-400">…</span>
+            <span className="text-gray-500">…</span>
           )}
         </div>
 
@@ -441,7 +450,7 @@ function MessageBubble({
                 >
                   <div className="font-medium text-gray-700">
                     [{c.index}] {c.source_title}
-                    <span className="ml-1 font-normal text-gray-400">
+                    <span className="ml-1 font-normal text-gray-500">
                       {[
                         c.lecture_no != null ? `Lecture ${c.lecture_no}` : null,
                         c.page != null

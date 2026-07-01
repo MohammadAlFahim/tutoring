@@ -119,7 +119,7 @@ export default function QuizClient({ initialTopic }: { initialTopic: string }) {
           <h1 className="truncate text-sm font-semibold text-gray-900">
             Practice quiz
           </h1>
-          <p className="truncate text-xs text-gray-400">{UNIT}</p>
+          <p className="truncate text-xs text-gray-500">{UNIT}</p>
         </div>
         <Link
           href="/chat"
@@ -174,7 +174,7 @@ export default function QuizClient({ initialTopic }: { initialTopic: string }) {
             >
               Generate quiz
             </button>
-            <p className="text-center text-xs text-gray-400">
+            <p className="text-center text-xs text-gray-500">
               Questions are drawn from the unit&apos;s materials. Short answers
               are graded with specific feedback.
             </p>
@@ -245,7 +245,7 @@ export default function QuizClient({ initialTopic }: { initialTopic: string }) {
                                 : "border-gray-300 text-gray-700 hover:bg-gray-50"
                         }`}
                       >
-                        <span className="font-mono text-xs text-gray-400">
+                        <span className="font-mono text-xs text-gray-500">
                           {String.fromCharCode(65 + i)}
                         </span>
                         {opt}

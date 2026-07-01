@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  // Do NOT disable zoom (maximumScale) — users must be able to pinch-zoom (WCAG 1.4.4).
   themeColor: "#4f46e5",
 };
 

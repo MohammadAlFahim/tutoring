@@ -89,7 +89,7 @@ export default async function AnalyticsPage() {
             <h1 className="text-sm font-semibold text-gray-900">
               Analytics · {UNIT}
             </h1>
-            <p className="text-xs text-gray-400">Last 30 days</p>
+            <p className="text-xs text-gray-500">Last 30 days</p>
           </div>
           <Link
             href="/chat"
@@ -127,7 +127,7 @@ export default async function AnalyticsPage() {
                         title={`${d.date}: ${d.count}`}
                       />
                     </div>
-                    <span className="text-[9px] text-gray-400">{d.date}</span>
+                    <span className="text-[9px] text-gray-500">{d.date}</span>
                   </div>
                 ))}
               </div>
@@ -152,7 +152,7 @@ export default async function AnalyticsPage() {
                 base={a.funnel.signups}
               />
             </div>
-            <p className="mt-3 text-xs text-gray-400">
+            <p className="mt-3 text-xs text-gray-500">
               Retention: {a.retention.returningUsers} of {a.totals.activeUsers}{" "}
               active users came back on a later day ({pct(a.retention.returningRate)}
               ). Avg {a.questionsPerUser.avg.toFixed(1)} questions per active user.
@@ -178,7 +178,7 @@ export default async function AnalyticsPage() {
                         style={{ width: `${(t.count / maxTopic) * 100}%` }}
                       />
                     </div>
-                    <span className="w-6 text-right text-xs text-gray-400">
+                    <span className="w-6 text-right text-xs text-gray-500">
                       {t.count}
                     </span>
                   </li>
@@ -200,7 +200,7 @@ export default async function AnalyticsPage() {
                   <li key={t.topic}>
                     <div className="flex items-center justify-between text-xs">
                       <span className="truncate text-gray-700">{t.topic}</span>
-                      <span className="ml-2 shrink-0 text-gray-400">
+                      <span className="ml-2 shrink-0 text-gray-500">
                         {t.correct}/{t.total} · {pct(t.accuracy)}
                       </span>
                     </div>
@@ -260,7 +260,7 @@ export default async function AnalyticsPage() {
           </Card>
         </section>
 
-        <p className="pt-2 text-center text-[11px] text-gray-400">
+        <p className="pt-2 text-center text-[11px] text-gray-500">
           Deep-explain uses: {a.totals.deepExplains} · Quizzes started:{" "}
           {a.totals.quizzesStarted} · Generated{" "}
           {new Date(a.generatedAt).toLocaleString()}
@@ -274,7 +274,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-3">
       <div className="text-2xl font-semibold text-gray-900">{value}</div>
-      <div className="text-xs text-gray-400">{label}</div>
+      <div className="text-xs text-gray-500">{label}</div>
     </div>
   );
 }
@@ -302,7 +302,7 @@ function FunnelRow({
     <div>
       <div className="flex items-center justify-between text-xs">
         <span className="text-gray-700">{label}</span>
-        <span className="text-gray-400">
+        <span className="text-gray-500">
           {value}
           {base > 0 ? ` · ${Math.round(width)}%` : ""}
         </span>
@@ -318,5 +318,5 @@ function FunnelRow({
 }
 
 function Empty({ label = "No data yet" }: { label?: string }) {
-  return <p className="py-6 text-center text-xs text-gray-400">{label}</p>;
+  return <p className="py-6 text-center text-xs text-gray-500">{label}</p>;
 }

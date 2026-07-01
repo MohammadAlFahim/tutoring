@@ -149,7 +149,10 @@ npm run dev
 # open http://localhost:3000
 ```
 
-`npm run build` for a production build, `npm run typecheck` for types only.
+`npm run build` for a production build, `npm run typecheck` for types only, and
+`npm test` to run the unit suite (chunking, quiz-token signing, analytics, email
+gating, prompt building). CI (`.github/workflows/ci.yml`) runs typecheck + tests
++ build on every push and pull request.
 
 ---
 
